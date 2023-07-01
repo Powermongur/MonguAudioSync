@@ -51,6 +51,13 @@ namespace Mongu_Audio_Sync
             int GetMasterVolumeLevel(out float pfLevelDB);
             //virtual /* [helpstring] */ HRESULT STDMETHODCALLTYPE GetMasterVolumeLevelScalar( /* [out] */ __out float *pfLevel) = 0;
             int GetMasterVolumeLevelScalar(out float pfLevel);
+            /// <summary>
+            /// Gets the muting state of the audio stream.
+            /// </summary>
+            /// <param name="isMuted">The muting state. True if the stream is muted, false otherwise.</param>
+            /// <returns>An HRESULT code indicating whether the operation passed of failed.</returns>
+            [PreserveSig]
+            int GetMute([Out][MarshalAs(UnmanagedType.Bool)] out Boolean isMuted);
         }
 
         public Form1()
@@ -63,26 +70,9 @@ namespace Mongu_Audio_Sync
             
         }
 
-
-        private void btnMute_Click(object sender, EventArgs e)
-        {
-            SendMessageW(this.Handle, WM_APPCOMMAND, this.Handle, (IntPtr)APPCOMMAND_VOLUME_MUTE);
-            Text = "Mute";
-        }
-
-        private void btnDecVol_Click(object sender, EventArgs e)
-        {
-            SendMessageW(this.Handle, WM_APPCOMMAND, this.Handle, (IntPtr)APPCOMMAND_VOLUME_DOWN);
-        }
-
-        private void btnIncVol_Click(object sender, EventArgs e)
-        {
-            SendMessageW(this.Handle, WM_APPCOMMAND, this.Handle, (IntPtr)APPCOMMAND_VOLUME_UP);
-        }
-
         private void button1_Click(object sender, EventArgs e)
         {
-            int Level = 20;
+            int level = 20;
            // if (args.Length == 1) { int.TryParse(args[0], out Level); }
 
             try
@@ -97,9 +87,9 @@ namespace Mongu_Audio_Sync
                 speakers.Activate(typeof(IAudioEndpointVolume).GUID, 0, IntPtr.Zero, out aepv_obj);
                 IAudioEndpointVolume aepv = (IAudioEndpointVolume)aepv_obj;
                 Guid ZeroGuid = new Guid();
-                int res = aepv.SetMasterVolumeLevelScalar(Level / 100f, ZeroGuid);
+                int res = aepv.SetMasterVolumeLevelScalar(level / 100f, ZeroGuid);
 
-                button1.Text = $"Audio set for {Level}%";
+                button1.Text = $"Audio set for {level}%";
             }
             catch (Exception ex) {
                 button1.Text = $"**Could not set audio level** {ex.Message}"; }
@@ -132,7 +122,41 @@ namespace Mongu_Audio_Sync
 
         private void button3_Click(object sender, EventArgs e)
         {
+            try
+            {
+                IMMDeviceEnumerator deviceEnumerator = MMDeviceEnumeratorFactory.CreateInstance();
+                IMMDevice speakers;
+                const int eRender = 0;
+                const int eMultimedia = 1;
+                deviceEnumerator.GetDefaultAudioEndpoint(eRender, eMultimedia, out speakers);
 
+                object aepv_obj;
+                speakers.Activate(typeof(IAudioEndpointVolume).GUID, 0, IntPtr.Zero, out aepv_obj);
+                IAudioEndpointVolume aepv = (IAudioEndpointVolume)aepv_obj;
+
+                int isMuteda = aepv.GetMute(out bool a);
+
+                button3.Text = $"Audio get for {isMuteda}%";
+            }
+            catch (Exception ex)
+            {
+                button3.Text = $"**Could not set audio level** {ex.Message}";
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            SendMessageW(this.Handle, WM_APPCOMMAND, this.Handle, (IntPtr)APPCOMMAND_VOLUME_UP);
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            SendMessageW(this.Handle, WM_APPCOMMAND, this.Handle, (IntPtr)APPCOMMAND_VOLUME_DOWN);
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            SendMessageW(this.Handle, WM_APPCOMMAND, this.Handle, (IntPtr)APPCOMMAND_VOLUME_MUTE);
         }
     }
 }
